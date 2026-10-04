@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Crea y exporta tu mod de Opera GX desde el navegador.">
+  <title>GX Mod Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="GX Mod Studio inicio"><span class="brand-mark">GX</span><span>GX / MOD STUDIO</span></a>
+      <div class="topbar-actions"><span class="save-state"><i></i> Guardado localmente</span><button class="icon-button" id="resetButton" type="button" title="Restablecer proyecto" aria-label="Restablecer proyecto">↺</button><button class="export-button" id="exportButton" type="button"><span>Exportar mod</span><b>⌘ E</b></button></div>
+    </header>
+
+    <main id="top" class="workspace">
+      <section class="intro">
+        <div><p class="eyebrow">OPERA GX / CREATOR TOOL</p><h1>Hazlo tuyo.</h1><p class="intro-copy">Construye un mod con tu identidad visual, tus sonidos y una preview viva. Todo se queda en tu dispositivo.</p></div>
+        <div class="project-id"><span>PROYECTO</span><strong id="projectBadge">UNTITLED_01</strong></div>
+      </section>
+
+      <div class="studio-grid">
+        <aside class="sidebar">
+          <nav class="steps" aria-label="Secciones del editor"><button class="step active" type="button" data-section="identity"><span>01</span><strong>Identidad</strong><small>Nombre y descripción</small></button><button class="step" type="button" data-section="wallpapers"><span>02</span><strong>Wallpapers</strong><small>Claro y oscuro</small></button><button class="step" type="button" data-section="audio"><span>03</span><strong>Audio</strong><small>Música del navegador</small></button><button class="step" type="button" data-section="sound"><span>04</span><strong>Sonidos</strong><small>Interfaz del navegador</small></button><button class="step" type="button" data-section="keyboard"><span>05</span><strong>Keyboard</strong><small>Escritura y teclas</small></button><button class="step" type="button" data-section="license"><span>06</span><strong>Licencia</strong><small>Créditos y permisos</small></button></nav>
+          <div class="tip"><span class="tip-icon">✦</span><p><strong>Tip rápido</strong><br>Arrastra tus archivos directamente sobre cualquier zona de carga.</p></div>
+        </aside>
+
+        <section class="editor-panel">
+          <div class="panel-heading"><div><p class="eyebrow">CONFIGURACIÓN</p><h2 id="sectionTitle">Identidad del mod</h2></div><span class="step-count">1 / 6</span></div>
+          <div class="editor-section active" id="identitySection">
+            <div class="field-row"><label class="field">Nombre del mod<input id="modName" type="text" value="Neon Afterglow" maxlength="36"><span>Cómo aparecerá en Opera GX</span></label><label class="field">Creador<input id="modCreator" type="text" value="Tu nombre" maxlength="30"><span>Tu firma creativa</span></label></div>
+            <label class="field">Descripción<textarea id="modDescription" rows="3" maxlength="140">A visual experience for late-night browsing.</textarea><span>Una frase para presentar tu mod</span></label>
+            <div class="icon-upload"><div><h3>Icono del mod</h3><p>Opcional. Si no subes uno, se incluirá el icono predeterminado.</p></div><div class="icon-file-drop drop-zone" data-kind="icon"><input class="file-input" type="file" accept="image/png" hidden><span class="icon-preview">G</span><button class="browse-button" type="button">Elegir PNG</button><div class="file-name">Usando icon_512.png</div></div></div>
+          </div>
+          <div class="editor-section" id="wallpapersSection"><div class="subheading"><div><h3>Dos caras, un mismo universo</h3><p>Usa imágenes o vídeos. Recomendado: 1920 × 1080.</p></div><span class="format-label">PNG · JPG · WEBM · MP4</span></div><div class="drop-grid"><div class="drop-zone" data-kind="light"><input class="file-input" type="file" accept="image/*,video/*" hidden><div class="drop-icon">☼</div><strong>Modo claro</strong><span>Arrastra una imagen o vídeo</span><button class="browse-button" type="button">Explorar archivos</button><div class="file-name">Usando light.png</div></div><div class="drop-zone" data-kind="dark"><input class="file-input" type="file" accept="image/*,video/*" hidden><div class="drop-icon">◐</div><strong>Modo oscuro</strong><span>Arrastra una imagen o vídeo</span><button class="browse-button" type="button">Explorar archivos</button><div class="file-name">Usando dark.png</div></div></div></div>
+          <div class="editor-section" id="audioSection"><div class="subheading"><div><h3>Diseña el sonido</h3><p>Una pista de fondo hace que el mod se sienta completo.</p></div><span class="format-label">MP3 · WAV · OGG</span></div><div class="audio-drop drop-zone" data-kind="audio"><input class="file-input" type="file" accept="audio/*" hidden><div class="audio-icon">♫</div><div><strong>Arrastra tu pista aquí</strong><span>o explora tus archivos de audio</span></div><button class="browse-button" type="button">Explorar</button><div class="file-name">Usando track_1.mp3</div></div><div class="audio-note"><span>♬</span><p>El audio se reproducirá en loop como música de fondo dentro del mod.</p></div></div>
+          <div class="editor-section" id="soundSection"><div class="subheading"><div><h3>Sonidos del navegador</h3><p>Cambia cada evento de forma independiente.</p></div><span class="format-label">MP3 · WAV · OGG</span></div><div class="event-list" id="soundEvents"></div></div>
+          <div class="editor-section" id="keyboardSection"><div class="subheading"><div><h3>Keyboard sounds</h3><p>Selecciona un sonido diferente para cada tecla.</p></div><span class="format-label">WAV · MP3</span></div><div class="event-list" id="keyboardEvents"></div></div>
+          <div class="editor-section" id="licenseSection"><div class="subheading"><div><h3>Licencia y créditos</h3><p>Incluye los permisos y reconocimientos dentro del ZIP.</p></div><span class="format-label">LICENSE.TXT</span></div><label class="field">Texto de licencia<textarea id="licenseText" rows="13">Este mod se proporciona para uso personal y no comercial en Opera GX.
+
+Los archivos de música, vídeo, imágenes y sonidos incluidos permanecen sujetos a sus licencias originales. Este documento no transfiere la propiedad de esos materiales ni concede permisos fuera de este mod.
+
+Créditos:
+Mod creado con GX Mod Studio.</textarea><span>Este contenido se exportará como license.txt.</span></label></div>
+        </section>
+
+        <section class="preview-panel"><div class="preview-heading"><div><p class="eyebrow">LIVE PREVIEW</p><h2>Así se verá</h2></div><div class="preview-toggle"><button class="preview-mode active" data-preview="dark" type="button">Oscuro</button><button class="preview-mode" data-preview="light" type="button">Claro</button></div></div><div class="browser-preview dark" id="browserPreview"><div class="browser-chrome"><span class="opera-dot">◉</span><div class="browser-tab active"><span class="tab-glyph">✦</span><span id="previewTab">Neon Afterglow</span><span>×</span></div><span class="new-tab">+</span><span class="window-actions">− □ ×</span></div><div class="address-bar"><span>‹</span><span>›</span><span>↻</span><div>⌕ &nbsp; opera://startpage</div><span>◌</span></div><div class="preview-canvas" id="previewCanvas"><div class="preview-stars"></div></div></div><div class="preview-footer"><div><span class="status-dot"></span><span id="previewStatus">Dark mode preview</span></div><span>Wallpaper only</span></div></section>
+      </div>
+    </main>
+    <footer class="footer"><span>GX MOD STUDIO <b>•</b> BUILT FOR CREATORS</span><span>v1.0 / Opera GX Mod Manifest</span></footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
