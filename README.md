@@ -17,8 +17,8 @@ Luego visita `http://localhost:5500`.
 1. Entra en [vercel.com](https://vercel.com) e inicia sesion con GitHub.
 2. Selecciona **Add New Project**.
 3. Importa `rahernandezm24-tech/GX_Mod_Studio`.
-4. Deja el framework como **Other**.
+4. En la pantalla de proyecto, cambia el preset a **Other**.
 5. Deja vacios **Build Command** y **Output Directory**.
 6. Pulsa **Deploy**.
 
-`index.html` se sirve como la pagina principal. El proyecto no necesita instalacion de dependencias ni proceso de compilacion.
+Este proyecto es un sitio estatico puro: no usa Vite ni npm. Si Vercel detecta Vite, debes quitar el archivo `package.json` del repositorio y volver a desplegar. La app principal se sirve desde `index.html` y sus recursos adyacentes (`app.js`, `styles.css`, carpetas `wallpaper`, `sound`, `music`, `keyboard`).
