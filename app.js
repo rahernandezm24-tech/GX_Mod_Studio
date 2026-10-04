@@ -151,6 +151,57 @@ window.addEventListener('beforeunload', (event) => { if (allowUnload) return; ev
 $('#resetButton').addEventListener('click', () => { if (window.confirm('¿Restablecer el proyecto?')) { allowUnload = true; window.location.reload(); } });
 document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'e') { event.preventDefault(); exportMod(); } });
 
+function resizeImageToSquare(imageSource, size = 256) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    if (typeof imageSource === 'string') {
+      img.src = imageSource;
+    } else if (imageSource instanceof Blob) {
+      img.src = URL.createObjectURL(imageSource);
+    } else if (imageSource instanceof File) {
+      img.src = URL.createObjectURL(imageSource);
+    } else {
+      reject(new Error('Unsupported image source'));
+      return;
+    }
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+
+      const scale = Math.min(size / img.width, size / img.height);
+      const drawWidth = img.width * scale;
+      const drawHeight = img.height * scale;
+      const offsetX = (size - drawWidth) / 2;
+      const offsetY = (size - drawHeight) / 2;
+
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+      canvas.toBlob((blob) => {
+        if (typeof imageSource === 'string' || imageSource instanceof Blob || imageSource instanceof File) {
+          if (imageSource instanceof Blob || imageSource instanceof File) {
+            URL.revokeObjectURL(img.src);
+          }
+        }
+        if (!blob) return reject(new Error('Could not generate resized icon'));
+        resolve(blob);
+      }, 'image/png');
+    };
+
+    img.onerror = () => {
+      if (typeof imageSource === 'string' || imageSource instanceof Blob || imageSource instanceof File) {
+        if (imageSource instanceof Blob || imageSource instanceof File) {
+          URL.revokeObjectURL(img.src);
+        }
+      }
+      reject(new Error('Could not load image for resizing'));
+    };
+  });
+}
+
 async function exportMod() {
   if (!window.JSZip) return showToast('No se pudo cargar el exportador ZIP.');
   const zip = new JSZip();
@@ -189,18 +240,23 @@ async function exportMod() {
   for (const kind of ['light', 'dark']) {
     if (!wallpaper[kind] && defaultAssets[kind]) wallpaper[kind] = { image: state.defaults[kind], text_color: '#FFFFFF', text_shadow: '#000000' };
   }
-  let iconPath;
-  if (state.files.icon) {
-    iconPath = state.files.icon.name;
-    zip.file(iconPath, state.files.icon);
-  } else {
-    try {
+  let iconPath = 'icon_256.png';
+  try {
+    const iconBlob = state.files.icon
+      ? await resizeImageToSquare(state.files.icon)
+      : await resizeImageToSquare(await (await fetch(state.defaults.icon)).blob());
+    zip.file(iconPath, iconBlob);
+  } catch (error) {
+    console.warn('Could not prepare icon at 256x256', error);
+    if (state.files.icon) {
+      zip.file(state.files.icon.name, state.files.icon);
+      iconPath = state.files.icon.name;
+    } else {
       const response = await fetch(state.defaults.icon);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const icon = await response.blob();
+      zip.file(state.defaults.icon, icon);
       iconPath = state.defaults.icon;
-      zip.file(iconPath, icon);
-    } catch (error) { console.warn('Could not include default icon', error); }
+    }
   }
   const browserSounds = {};
   for (const [event, fallback] of Object.entries(soundEvents)) {
@@ -219,7 +275,7 @@ async function exportMod() {
     if (!custom) for (const fallback of fallbacks) { const response = await fetch(`keyboard/${fallback}`); zip.file(`keyboard/${fallback}`, await response.blob()); }
   }
   const manifest = { name, description: $('#modDescription').value.trim(), developer: { name: $('#modCreator').value.trim() || 'GX Creator' }, manifest_version: 3, mod: { license: 'license.txt', payload: { background_music: [assetPath('audio', 'music/track_1.mp3')], browser_sounds: browserSounds, keyboard_sounds: keyboardSounds, wallpaper }, schema_version: 1 }, version: '1.0' };
-  if (iconPath) manifest.icons = { '512': iconPath };
+  if (iconPath) manifest.icons = { '256': iconPath };
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   zip.file('license.txt', $('#licenseText').value.trim() || 'This mod is provided for personal, non-commercial use in Opera GX.');
   const blob = await zip.generateAsync({ type: 'blob' });
