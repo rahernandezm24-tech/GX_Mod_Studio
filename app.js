@@ -42,10 +42,17 @@ function updatePreview() {
   $('#projectBadge').textContent = name.replace(/\s+/g, '_').toUpperCase().slice(0, 18);
 }
 
+function updateThemePreview() {
+  const preview = $('#themeBrowserPreview');
+  if (!preview) return;
+  preview.style.setProperty('--theme-accent', $('#webAccent').value);
+  preview.style.setProperty('--theme-base', $('#webBase').value);
+}
+
 function setSection(section) {
   document.querySelectorAll('.step').forEach((step) => step.classList.toggle('active', step.dataset.section === section));
   document.querySelectorAll('.editor-section').forEach((panel) => panel.classList.toggle('active', panel.id === `${section}Section`));
-  const labels = { identity: ['Identidad del mod', '1 / 6'], wallpapers: ['Wallpapers', '2 / 6'], audio: ['Audio del mod', '3 / 6'], sound: ['Sonidos del navegador', '4 / 6'], keyboard: ['Keyboard sounds', '5 / 6'], license: ['Licencia y créditos', '6 / 6'] };
+  const labels = { identity: ['Identidad del mod', '1 / 7'], wallpapers: ['Wallpapers', '2 / 7'], audio: ['Audio del mod', '3 / 7'], sound: ['Sonidos del navegador', '4 / 7'], keyboard: ['Keyboard sounds', '5 / 7'], webmodding: ['Webmodding / Temas', '6 / 7'], license: ['Licencia y créditos', '7 / 7'] };
   $('#sectionTitle').textContent = labels[section][0];
   $('.step-count').textContent = labels[section][1];
 }
@@ -80,10 +87,22 @@ document.querySelectorAll('.preview-mode').forEach((button) => button.addEventLi
   document.querySelectorAll('.preview-mode').forEach((item) => item.classList.remove('active'));
   button.classList.add('active');
   const kind = button.dataset.preview;
+  const isTheme = kind === 'theme';
   $('#browserPreview').classList.toggle('light', kind === 'light');
-  $('#previewStatus').textContent = `${kind === 'light' ? 'Light' : 'Dark'} mode preview`;
-  updatePreviewAsset(kind);
+  $('#browserPreview').classList.toggle('theme-mode', isTheme);
+  $('#previewStatus').textContent = isTheme ? 'Theme preview' : `${kind === 'light' ? 'Light' : 'Dark'} mode preview`;
+  $('#previewFooterLabel').textContent = isTheme ? 'Opera GX theme' : 'Wallpaper only';
+  if (isTheme) updateThemePreview();
+  else updatePreviewAsset(kind);
 }));
+document.querySelectorAll('.theme-preset').forEach((preset) => preset.addEventListener('click', () => {
+  document.querySelectorAll('.theme-preset').forEach((item) => item.classList.remove('active'));
+  preset.classList.add('active');
+  $('#webAccent').value = preset.dataset.accent;
+  $('#webBase').value = preset.dataset.base;
+  updateThemePreview();
+}));
+['#webAccent', '#webBase'].forEach((selector) => $(selector).addEventListener('input', updateThemePreview));
 document.querySelectorAll('.drop-zone').forEach((zone) => {
   const input = zone.querySelector('.file-input');
   const kind = zone.dataset.kind;
@@ -202,8 +221,46 @@ function resizeImageToSquare(imageSource, size = 256) {
   });
 }
 
+function hexToHsl(hex) {
+  const value = hex.replace('#', '');
+  const red = parseInt(value.slice(0, 2), 16) / 255;
+  const green = parseInt(value.slice(2, 4), 16) / 255;
+  const blue = parseInt(value.slice(4, 6), 16) / 255;
+  const max = Math.max(red, green, blue);
+  const min = Math.min(red, green, blue);
+  let hue = 0;
+  let saturation = 0;
+  const lightness = (max + min) / 2;
+  const delta = max - min;
+  if (delta) {
+    saturation = delta / (1 - Math.abs(2 * lightness - 1));
+    if (max === red) hue = ((green - blue) / delta) % 6;
+    else if (max === green) hue = (blue - red) / delta + 2;
+    else hue = (red - green) / delta + 4;
+    hue = Math.round(hue * 60);
+    if (hue < 0) hue += 360;
+  }
+  return { h: hue, s: Math.round(saturation * 100), l: Math.round(lightness * 100) };
+}
+
+function buildWebmodCss() {
+  const accent = $('#webAccent').value;
+  const base = $('#webBase').value;
+  return `body { color: #f5f5f5; background: ${base}; border-color: ${accent}; }\n\na, button, [role="button"] { color: #ffffff; background-color: ${base}; border-color: ${accent}; }\n\na:hover, button:hover, [role="button"]:hover { background-color: ${accent}; }`;
+}
+
 async function exportMod() {
-  if (!window.JSZip) return showToast('No se pudo cargar el exportador ZIP.');
+  const exportButton = $('#exportButton');
+  if (exportButton.disabled) return;
+  exportButton.disabled = true;
+  exportButton.classList.add('is-exporting');
+  if (!window.JSZip) {
+    showToast('No se pudo cargar el exportador ZIP.');
+    exportButton.disabled = false;
+    exportButton.classList.remove('is-exporting');
+    return;
+  }
+  try {
   const zip = new JSZip();
   const name = $('#modName').value.trim() || 'Untitled Mod';
   const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'gx-mod';
@@ -274,7 +331,10 @@ async function exportMod() {
     keyboardSounds[event] = paths;
     if (!custom) for (const fallback of fallbacks) { const response = await fetch(`keyboard/${fallback}`); zip.file(`keyboard/${fallback}`, await response.blob()); }
   }
-  const manifest = { name, description: $('#modDescription').value.trim(), developer: { name: $('#modCreator').value.trim() || 'GX Creator' }, manifest_version: 3, mod: { license: 'license.txt', payload: { background_music: [assetPath('audio', 'music/track_1.mp3')], browser_sounds: browserSounds, keyboard_sounds: keyboardSounds, wallpaper }, schema_version: 1 }, version: '1.0' };
+  const accent = hexToHsl($('#webAccent').value);
+  const base = hexToHsl($('#webBase').value);
+  zip.file('webmodding/opera.css', buildWebmodCss());
+  const manifest = { name, description: $('#modDescription').value.trim(), developer: { name: $('#modCreator').value.trim() || 'GX Creator' }, manifest_version: 3, mod: { license: 'license.txt', payload: { background_music: [assetPath('audio', 'music/track_1.mp3')], browser_sounds: browserSounds, keyboard_sounds: keyboardSounds, page_styles: [{ css: ['webmodding/opera.css'], matches: ['https://*.opera.com/*'] }], theme: { dark: { gx_accent: accent, gx_secondary_base: base }, light: { gx_accent: { ...accent, l: Math.min(95, accent.l + 8) }, gx_secondary_base: { ...base, l: Math.min(30, base.l + 8) } } }, wallpaper }, schema_version: 1 }, version: '1.0' };
   if (iconPath) manifest.icons = { '256': iconPath };
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   zip.file('license.txt', $('#licenseText').value.trim() || 'This mod is provided for personal, non-commercial use in Opera GX.');
@@ -285,6 +345,13 @@ async function exportMod() {
   link.click();
   URL.revokeObjectURL(link.href);
   showToast('Tu mod está listo para descargar');
+  } catch (error) {
+    console.error('Could not export mod', error);
+    showToast('No se pudo exportar el mod. Revisa tus archivos e inténtalo de nuevo.');
+  } finally {
+    exportButton.disabled = false;
+    exportButton.classList.remove('is-exporting');
+  }
 }
 
 updatePreview();
